@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Questões ENADE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            width: 100%;
+        }
+        header {
+            width: 100%;
+            background-color: #fff;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 3px solid #003366;
+        }
+        header img {
+            max-height: 50px;
+        }
+        h1 {
+            color: #003366;
+            text-align: center;
+        }
+        label {
+            font-weight: bold;
+        }
+        select, button {
+            padding: 10px;
+            margin: 5px 0;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #003366;
+            border-radius: 5px;
+        }
+        .question {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .question-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+        .question button {
+            padding: 5px 10px;
+            font-size: 14px;
+            width: auto;
+        }
+        .question .view-button {
+            background-color: #003366;
+            color: white;
+        }
+        .question .view-button:hover {
+            background-color: #002244;
+        }
+        .question .comment-button {
+            background-color: #28a745;
+            color: white;
+        }
+        .question .comment-button:hover {
+            background-color: #218838;
+        }
+        .modal, .modal-justificativa {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content, .modal-justificativa-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            width: 90%;
+            height: 90%;
+            max-width: 1200px;
+            max-height: 800px;
+            text-align: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header, .modal-justificativa-header {
+            cursor: move;
+            background: #eee;
+            padding: 10px;
+            border-radius: 5px 5px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .close, .close-justificativa {
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .image-container {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .image-container img {
+            max-width: 100%;
+            transform-origin: top left;
+        }
+        .zoom-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .zoom-controls button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .modal-justificativa-content {
+            width: 60%;
+            height: auto;
+            max-width: 800px;
+            max-height: 400px;
+        }
+        .justificativa-container {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="https://www.cesurgmarau.com.br/site/statics/logo.png" alt="CESURG Marau Logo">
+    </header>
+    <div class="container">
+        <h1>Banco de Questões ENADE</h1>
+        <label for="curso">Selecione o Curso:</label>
+        <select id="curso">
+            <option value="">Selecione</option>
+        </select>
+        
+        <label for="disciplina">Selecione a Disciplina:</label>
+        <select id="disciplina">
+            <option value="">Selecione</option>
+        </select>
+        
+        <div id="questoes"></div>
+    </div>
+
+    <div id="modal" class="modal" onclick="outsideClick(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="image-container">
+                <img id="questionImage" src="" alt="Questão">
+            </div>
+            <div class="zoom-controls">
+                <button onclick="zoomIn()">🔍+</button>
+                <button onclick="zoomOut()">🔍-</button>
+            </div>
+            <div class="modal-footer">
+                <button onclick="showGabarito()">Ver Gabarito</button>
+                <button onclick="showJustificativa()">Ver Justificativa</button>
+            </div>
+            <div id="gabarito" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <div id="modalJustificativa" class="modal-justificativa" onclick="outsideClickJustificativa(event)">
+        <div class="modal-justificativa-content" onclick="event.stopPropagation()">
+            <div class="modal-justificativa-header">
+                <span class="close-justificativa" onclick="closeModalJustificativa()">&times;</span>
+            </div>
+            <div class="justificativa-container">
+                <p id="justificativaText"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let data = [];
+        let scale = 1;
+
+        fetch('Banco_de_Dados.json')
+            .then(response => response.json())
+            .then(jsonData => {
+                data = jsonData;
+                populateCursos();
+            })
+            .catch(error => console.error('Erro ao carregar o arquivo JSON:', error));
+
+        const cursoSelect = document.getElementById('curso');
+        const disciplinaSelect = document.getElementById('disciplina');
+        const questoesDiv = document.getElementById('questoes');
+        const modal = document.getElementById('modal');
+        const modalContent = document.querySelector('.modal-content');
+        const modalHeader = document.querySelector('.modal-header');
+        const questionImage = document.getElementById('questionImage');
+        const gabaritoDiv = document.getElementById('gabarito');
+        const modalJustificativa = document.getElementById('modalJustificativa');
+        const justificativaText = document.getElementById('justificativaText');
+        const modalJustificativaContent = document.querySelector('.modal-justificativa-content');
+        const modalJustificativaHeader = document.querySelector('.modal-justificativa-header');
+
+        function populateCursos() {
+            const cursos = [...new Set(data.map(item => item.Curso))].sort();
+            cursos.forEach(curso => {
+                const option = document.createElement('option');
+                option.value = curso;
+                option.textContent = curso;
+                cursoSelect.appendChild(option);
+            });
+        }
+
+        cursoSelect.addEventListener('change', () => {
+            const selectedCurso = cursoSelect.value;
+            const disciplinas = [...new Set(data.filter(item => item.Curso === selectedCurso).map(item => item.Disciplinas.split('; ')).flat())].sort();
+            disciplinaSelect.innerHTML = '<option value="">Selecione</option>';
+            disciplinas.forEach(disciplina => {
+                const option = document.createElement('option');
+                option.value = disciplina;
+                option.textContent = disciplina;
+                disciplinaSelect.appendChild(option);
+            });
+        });
+
+        disciplinaSelect.addEventListener('change', () => {
+            const selectedCurso = cursoSelect.value;
+            const selectedDisciplina = disciplinaSelect.value;
+            const filteredQuestoes = data.filter(item => item.Curso === selectedCurso && item.Disciplinas.includes(selectedDisciplina));
+            questoesDiv.innerHTML = '';
+            filteredQuestoes.forEach(questao => {
+                const disciplinasFormatadas = questao.Disciplinas.replace(/; /g, ' | ');
+                const div = document.createElement('div');
+                div.className = 'question';
+                div.innerHTML = `<strong>${questao.Ano} - Questão ${questao.Questão} (${disciplinasFormatadas})</strong>
+                                <div class="question-buttons">
+                                    <button class="view-button" onclick="viewQuestion('${questao.Código}', '${questao.Gabarito}', \`${questao.Justificativa.replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`)">Ver Questão</button>
+                                    <button class="comment-button" onclick="sendComments()">Enviar Comentários</button>
+                                </div>`;
+                questoesDiv.appendChild(div);
+            });
+        });
+
+        function viewQuestion(codigo, gabarito, justificativa) {
+            const imgSrc = `images/${codigo}.png`;
+            questionImage.src = imgSrc;
+            scale = 1;
+            questionImage.style.transform = `scale(${scale})`;
+            gabaritoDiv.textContent = '';
+            modal.style.display = 'flex';
+            modal.dataset.gabarito = gabarito;
+            modal.dataset.justificativa = justificativa;
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        function showGabarito() {
+            gabaritoDiv.textContent = `Gabarito: ${modal.dataset.gabarito}`;
+        }
+
+        function showJustificativa() {
+            justificativaText.textContent = modal.dataset.justificativa;
+            modalJustificativa.style.display = 'flex';
+        }
+
+        function closeModalJustificativa() {
+            modalJustificativa.style.display = 'none';
+        }
+
+        function outsideClick(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        function outsideClickJustificativa(event) {
+            if (event.target === modalJustificativa) {
+                closeModalJustificativa();
+            }
+        }
+
+        function sendComments() {
+            window.open('https://docs.google.com/forms/d/e/1FAIpQLSe3IJT-pK5iKDzwsXVTfWw3-bDwi4n7yhPg5tr1fcQg0CAyiQ/viewform', '_blank');
+        }
+
+        let isDraggingModal = false;
+        let offsetModal = { x: 0, y: 0 };
+
+        modalHeader.addEventListener('mousedown', (e) => {
+            isDraggingModal = true;
+            offsetModal.x = e.clientX - modalContent.getBoundingClientRect().left;
+            offsetModal.y = e.clientY - modalContent.getBoundingClientRect().top;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDraggingModal = false;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingModal) {
+                modalContent.style.left = `${e.clientX - offsetModal.x}px`;
+                modalContent.style.top = `${e.clientY - offsetModal.y}px`;
+                modalContent.style.position = 'absolute';
+            }
+        });
+
+        let isDraggingJustificativa = false;
+        let offsetJustificativa = { x: 0, y: 0 };
+
+        modalJustificativaHeader.addEventListener('mousedown', (e) => {
+            isDraggingJustificativa = true;
+            offsetJustificativa.x = e.clientX - modalJustificativaContent.getBoundingClientRect().left;
+            offsetJustificativa.y = e.clientY - modalJustificativaContent.getBoundingClientRect().top;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDraggingJustificativa = false;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingJustificativa) {
+                modalJustificativaContent.style.left = `${e.clientX - offsetJustificativa.x}px`;
+                modalJustificativaContent.style.top = `${e.clientY - offsetJustificativa.y}px`;
+                modalJustificativaContent.style.position = 'absolute';
+            }
+        });
+
+        function zoomIn() {
+            scale += 0.1;
+            questionImage.style.transform = `scale(${scale})`;
+        }
+
+        function zoomOut() {
+            scale = Math.max(1, scale - 0.1);
+            questionImage.style.transform = `scale(${scale})`;
+        }
+    </script>
+</body>
+</html>
